@@ -341,8 +341,7 @@ body {
     overflow-x: hidden;
   }
   #frame #sidepanel #contacts::-webkit-scrollbar {
-    /*display:none;*/
-    word-wrap: break-word;
+    display:none;
   }
 }
 #frame #sidepanel #contacts.expanded {
@@ -422,7 +421,8 @@ body {
 }
 @media screen and (max-width: 735px) {
   #frame #sidepanel #contacts ul li.contact .wrap .meta {
-    display: none;
+   /* display: none;*/
+    word-wrap: break-word;
   }
 }
 #frame #sidepanel #contacts ul li.contact .wrap .meta .name {
