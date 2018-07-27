@@ -1,3 +1,10 @@
+
+// If there is already a screenname in local storage, the browser will choose that one instead of anon -ps
+if (localStorage.getItem("sn")) {
+    var sn = localStorage.getItem("sn");
+} else {    //anon is the default for those who do not pick screennames -ps
+    var sn = "anon";
+}
 var config = {
     apiKey: "AIzaSyCc2VPnhKLPvdEc_h6txQyIIcxrm2Ll_3s",
     authDomain: "project1-chat.firebaseapp.com",
@@ -12,27 +19,44 @@ var database = firebase.database();
 var userList = [];
 var isDuplicate = false;
 
+function fireMessage(msg) {
+    database.ref("message-history").push({
+        name: sn,
+        message: msg,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+    });
+}
+
 function giphySearch(query) {
+    if(!query) {
+        query = "random";
+    }
     var queryURL = "https://api.giphy.com/v1/gifs/search?q=" + query + "&api_key=tEEFTUSNf170mNTLFD9OkvQMltuPs8gS";
     $.ajax({
         url: queryURL,
         method: "GET"
     }).then(function (response) {
-        console.log(response)
+        //console.log(response)
         var imageURL = response.data[4].images.fixed_width.url;
-        database.ref("giphy/" ).push(imageURL);
+        database.ref("message-history").push({
+            name: sn,
+            message: msg,
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+            api_query: query,
+            api_result: imageURL,
+            api_type: "giphy",
+        });
     });
-
 };
 
-function createTriviaURL(c, d, t, a) {
-    var cat = "", diff = "", type = "", amt = 1;
+function createTriviaURL(d, c, t, a) {
+    var cat = "", diff = "", type = "&type=multiple", amt = 1;
+    if (d) {
+        diff = "&difficulty=" + d;
+    }
     if (c) {
         cat = "&category=" + c;
     }
-    // if (d) {
-    //     diff = "&difficulty=" + d;
-    // }
     // if (t) {
     //     type = "&type=" + t;
     // }
@@ -43,28 +67,32 @@ function createTriviaURL(c, d, t, a) {
     return url;
 }
 
-function getTrivia(url) {
-    console.log(url);
+function getTrivia(url, msg) {
     $.ajax({
         method: "GET",
         url: url,
     }).then(function (data) {
         if (data.response_code === 0) {
-            var triviaQuestions = data.results;
-            console.log(triviaQuestions);
-            database.ref("trivia/").push(triviaQuestions[0]);
+            var triviaQuestion = data.results;
+            //console.log(triviaQuestion);
+            database.ref("message-history").push({
+                name: sn,
+                message: msg,
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                api_result: triviaQuestion,
+                api_type: "trivia",
+            });
         }
     })
 }
 
 
 var bot = {
-    username: "",
     checkMsg: function (msg) {
         if (msg.charAt(0) === "!") {
-            return true;
+            this.botAction(msg);
         } else {
-            return false;
+            fireMessage(msg);
         }
     },
 
@@ -75,13 +103,13 @@ var bot = {
                 giphySearch(action[1]);
                 break;
             case "trivia":
-                getTrivia(createTriviaURL(action[1]));
+                getTrivia(createTriviaURL(action[1], action[2]), msg);
                 break;
             case "help":
                 //help()
                 break;
             default:
-                //help()
+                fireMessage(msg);
                 break;
         }
     },
@@ -89,15 +117,8 @@ var bot = {
         //tell what bot can do
     }
 }
+
 $(document).ready(function () {
-
-    // If there is already a screenname in local storage, the browser will choose that one instead of anon -ps
-    if (localStorage.getItem("sn")) {
-        var sn = localStorage.getItem("sn");
-    } else {    //anon is the default for those who do not pick screennames -ps
-        var sn = "anon";
-    }
-
     //overlay div for picking username initially -ps
     var overlay = $("<div>").css({
         position: "absolute",
@@ -128,7 +149,6 @@ $(document).ready(function () {
                 return;
             }
         }
-        console.log(isDuplicate);
         if (isDuplicate) {
             localStorage.setItem("sn", "anon");
         } else {
@@ -150,26 +170,8 @@ $(document).ready(function () {
         event.preventDefault();
         if ($("#msg").val()) {
             var msg = $("#msg").val();
-            var isCommand = bot.checkMsg(msg);
+            bot.checkMsg(msg);
             $("#msg").val("");
-            database.ref("recent-history").push({
-                name: sn,
-                message: msg,
-                timestamp: firebase.database.ServerValue.TIMESTAMP, 
-                isCommand: isCommand,
-            });
-            database.ref("users/" + sn).push({
-                name: sn,
-                message: msg,
-                timestamp: firebase.database.ServerValue.TIMESTAMP,
-                isCommand: isCommand,
-            });
-            database.ref("date/" + moment().format("YYYY MMMM DD")).push({
-                name: sn,
-                message: msg,
-                timestamp: firebase.database.ServerValue.TIMESTAMP,
-                isCommand: isCommand,
-            });
         }
 
     });
@@ -178,9 +180,7 @@ $(document).ready(function () {
     //updates userList array when new child added to userlist database
     database.ref("userlist").on("child_added", function (snapshot) {
         var newUser = snapshot.key;
-        console.log(newUser);
         userList.push(newUser);
-        console.log(userList);
         $("#contacts ul").append('\
         <li class="contact active" id='+ newUser + '>\
             <div class="wrap">\
@@ -196,9 +196,7 @@ $(document).ready(function () {
 
     database.ref("userlist").on("child_removed", function (snapshot) {
         var signoffUser = snapshot.key;
-        console.log(signoffUser);
         userList.splice(userList.indexOf(signoffUser), 1);
-        console.log(userList);
         $("#" + signoffUser).remove();
     });
 
@@ -210,30 +208,50 @@ $(document).ready(function () {
 
 
     //updates chat window with most recent 50 messages and scrolls most recent into view
-    database.ref("recent-history").orderByChild("timestamp").limitToLast(50).on("child_added", function (snapshot) {
-        var historySV = snapshot.val();
+    database.ref("message-history").orderByChild("timestamp").limitToLast(50).on("child_added", function (snapshot) {
+        var messageObj = snapshot.val();
         var newMsg = $("<li>");
-        var msgTxt = $("<p>");
         newMsg.addClass("sent");
-        //console.log(historySV);
-        msgTxt.text(historySV.name + ": " + historySV.message);
-        newMsg.append(msgTxt);
-        $("#msg-box").append(newMsg);
-        $("p")[$("p").length - 1].scrollIntoView();
-    });
-
-    database.ref("giphy/").on("child_added", function (snapshot) {
-        var giphyURL = snapshot.val();
-        var newMsg = $("<li>");
         var msgTxt = $("<p>");
-        newMsg.addClass("sent");
-        //console.log(historySV);
-        msgTxt.html("<img src='" + giphyURL + "' alt='giphy-image'>");
-        newMsg.append(msgTxt);
+        console.log(messageObj);
+        msgTxt.text(messageObj.name + ": ");
         $("#msg-box").append(newMsg);
-        $("p")[$("p").length - 1].scrollIntoView();
-        console.log(snapshot.val());
+        if (messageObj.api_type === "giphy") {
+            msgTxt.append("<img src="+messageObj.api_result+" alt=giphy"+messageObj.api_query+">")
+        } else if (messageObj.api_type === "trivia") {
+            msgTxt.append(messageObj.message);
+            var triviaMsg = $("<li>");
+            triviaMsg.addClass("sent");
+            var triviaTxt = $("<p>");
+            var triviaCorrAns = messageObj.api_result[0].correct_answer;
+            var triviaAllAns = messageObj.api_result[0].incorrect_answers;
+            triviaAllAns.push(triviaCorrAns);
+            triviaTxt.append(messageObj.api_result[0].question, "<br>");
+            triviaAllAns.forEach((e,i)=>{triviaTxt.append(e+"<br>")});
+            triviaMsg.append(triviaTxt);
+            $("#msg-box").append(triviaMsg);
+        } else {
+            msgTxt.append(messageObj.message);
+        }
+        newMsg.append(msgTxt);
+        setTimeout(scrollBot,100);  
     });
+    function scrollBot() {
+        $(".messages").scrollTop($(".messages")[0].scrollHeight);
+    }
+    
+    // database.ref("giphy/").on("child_added", function (snapshot) {
+    //     var giphyURL = snapshot.val();
+    //     var newMsg = $("<li>");
+    //     var msgTxt = $("<p>");
+    //     newMsg.addClass("sent");
+    //     //console.log(historySV);
+    //     msgTxt.html("<img src='" + giphyURL + "' alt='giphy-image'>");
+    //     newMsg.append(msgTxt);
+    //     $("#msg-box").append(newMsg);
+    //     $("p")[$("p").length - 1].scrollIntoView();
+    //     console.log(snapshot.val());
+    // });
 
 
 });
