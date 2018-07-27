@@ -28,7 +28,7 @@ function fireMessage(msg) {
 }
 
 function giphySearch(query) {
-    if(!query) {
+    if (!query) {
         query = "random";
     }
     var queryURL = "https://api.giphy.com/v1/gifs/search?q=" + query + "&api_key=tEEFTUSNf170mNTLFD9OkvQMltuPs8gS";
@@ -129,13 +129,20 @@ $(document).ready(function () {
         opacity: "0.99",
         display: "block",
     });
+    var duplicateDiv = $("<div>That name is already in use.</div>").css({
+        color: "red",
+        display: "none",
+        "font-weight": "bold",
+        "text-align": "center",
+        "text-shadow": "1px 1px black",
+    });
     var snForm = $("<form>");
     var snChoice = $("<input type='text' placeholder='Pick a screen name...' id='sn'>");
     snChoice.addClass("my-5 mx-auto d-block");
     var snButton = $("<input type=submit id='snSubmit'>").css("display", "none");
     snForm.append(snChoice, snButton);
     overlay.append(snForm);
-
+    overlay.append(duplicateDiv);
     //submit button for screenname, sets screenname in localstorage and pushes to database
     $("body").on("click", "#snSubmit", function (event) {
         event.preventDefault();
@@ -146,6 +153,7 @@ $(document).ready(function () {
         for (let i = 0; i < userList.length; i++) {
             isDuplicate = (localStorage.getItem("sn") === userList[i]);
             if (isDuplicate) {
+                duplicateDiv.css("display", "block");
                 return;
             }
         }
@@ -160,7 +168,6 @@ $(document).ready(function () {
             overlay.css("display", "none");
             $("#msg").focus();
         }
-        //pushes sn in localstorage to userlist
     });
     $("body").append(overlay);
 
@@ -202,7 +209,6 @@ $(document).ready(function () {
 
     //code to run when user closes screen (signs off)
     window.onbeforeunload = function () {
-        var sn = localStorage.getItem("sn");
         database.ref("userlist/" + sn).remove();
     }
 
@@ -213,11 +219,11 @@ $(document).ready(function () {
         var newMsg = $("<li>");
         newMsg.addClass("sent");
         var msgTxt = $("<p>");
-        console.log(messageObj);
+        //console.log(messageObj);
         msgTxt.text(messageObj.name + ": ");
         $("#msg-box").append(newMsg);
         if (messageObj.api_type === "giphy") {
-            msgTxt.append("<img src="+messageObj.api_result+" alt=giphy"+messageObj.api_query+">")
+            msgTxt.append("<img src=" + messageObj.api_result + " alt=giphy" + messageObj.api_query + ">")
         } else if (messageObj.api_type === "trivia") {
             msgTxt.append(messageObj.message);
             var triviaMsg = $("<li>");
@@ -227,19 +233,19 @@ $(document).ready(function () {
             var triviaAllAns = messageObj.api_result[0].incorrect_answers;
             triviaAllAns.push(triviaCorrAns);
             triviaTxt.append(messageObj.api_result[0].question, "<br>");
-            triviaAllAns.forEach((e,i)=>{triviaTxt.append(e+"<br>")});
+            triviaAllAns.forEach((e, i) => { triviaTxt.append(e + "<br>") });
             triviaMsg.append(triviaTxt);
             $("#msg-box").append(triviaMsg);
         } else {
             msgTxt.append(messageObj.message);
         }
         newMsg.append(msgTxt);
-        setTimeout(scrollBot,100);  
+        setTimeout(scrollBot, 100);
     });
     function scrollBot() {
         $(".messages").scrollTop($(".messages")[0].scrollHeight);
     }
-    
+
     // database.ref("giphy/").on("child_added", function (snapshot) {
     //     var giphyURL = snapshot.val();
     //     var newMsg = $("<li>");
