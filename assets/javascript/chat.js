@@ -19,37 +19,63 @@ function giphySearch(query) {
         method: "GET"
     }).then(function (response) {
         console.log(response)
-        var imageUrl = response.data[4].images.fixed_width.url;
-        database.ref("giphy/").push(imageUrl);
-        // var randomDiv = $("<div>");
-        // var randomGiphy = $("<img>");
-        // randomGiphy.attr("src", imageUrl);
-        // randomGiphy.attr("alt", "random giphy");
-        // randomDiv.append(randomGiphy)
-        // console.log(randomDiv)
-        // $("#msg-box").append(randomDiv)
-        // console.log(randomGiphy);
+        var imageURL = response.data[4].images.fixed_width.url;
+        database.ref("giphy/" ).push(imageURL);
     });
 
 };
+
+function createTriviaURL(c, d, t, a) {
+    var cat = "", diff = "", type = "", amt = 1;
+    if (c) {
+        cat = "&category=" + c;
+    }
+    // if (d) {
+    //     diff = "&difficulty=" + d;
+    // }
+    // if (t) {
+    //     type = "&type=" + t;
+    // }
+    // if (a) {
+    //     amt = a;
+    // }
+    var url = "https://opentdb.com/api.php?amount=" + amt + cat + diff + type;
+    return url;
+}
+
+function getTrivia(url) {
+    console.log(url);
+    $.ajax({
+        method: "GET",
+        url: url,
+    }).then(function (data) {
+        if (data.response_code === 0) {
+            var triviaQuestions = data.results;
+            console.log(triviaQuestions);
+            database.ref("trivia/").push(triviaQuestions[0]);
+        }
+    })
+}
 
 
 var bot = {
     username: "",
     checkMsg: function (msg) {
         if (msg.charAt(0) === "!") {
-            this.botAction(msg);
+            return true;
+        } else {
+            return false;
         }
     },
 
     botAction: function (msg) {
-        var action = msg.substring(1);
-        switch (action.split(" ")[0]) {
+        var action = msg.substring(1).split(" ");
+        switch (action[0]) {
             case "giphy":
-                giphySearch(action.split(" ")[1]);
+                giphySearch(action[1]);
                 break;
             case "trivia":
-                //trivia()
+                getTrivia(createTriviaURL(action[1]));
                 break;
             case "help":
                 //help()
@@ -124,24 +150,28 @@ $(document).ready(function () {
         event.preventDefault();
         if ($("#msg").val()) {
             var msg = $("#msg").val();
+            var isCommand = bot.checkMsg(msg);
             $("#msg").val("");
             database.ref("recent-history").push({
                 name: sn,
                 message: msg,
-                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                timestamp: firebase.database.ServerValue.TIMESTAMP, 
+                isCommand: isCommand,
             });
             database.ref("users/" + sn).push({
                 name: sn,
                 message: msg,
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
+                isCommand: isCommand,
             });
             database.ref("date/" + moment().format("YYYY MMMM DD")).push({
                 name: sn,
                 message: msg,
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
+                isCommand: isCommand,
             });
         }
-        bot.checkMsg(msg)
+
     });
 
 
