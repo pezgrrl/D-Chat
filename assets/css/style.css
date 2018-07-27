@@ -572,7 +572,7 @@ body {
   display: inline-block;
   clear: both;
   float: right;
-  margin: 15px 15px 15px 15px;
+  margin: 15px 15px 0 15px;
   width: calc(100% - 25px);
   font-size: 0.9em;
 }
@@ -599,7 +599,7 @@ body {
 } */
 #frame .content .messages ul li img {
   border-radius: 5%;
-  float: left;
+
 }
 #frame .content .messages ul li p {
   display: inline-block;

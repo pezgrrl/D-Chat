@@ -1,3 +1,24 @@
+function triviaQuestion(amt, cat, diff, type) {
+    var fullURL = "https://opentdb.com/api.php?amount=1&category=9&difficulty=easy&type=multiple";
+    console.log(fullURL);
+}
+
+/*
+    https://opentdb.com/api_category.php
+    url for trivia categories
+
+    https://opentdb.com/api_count.php?category=CATEGORY_ID_HERE
+    url for #questions in a category
+
+    https://opentdb.com/api_count_global.php
+    url for global q count
+
+
+
+
+
+*/
+
 function apiQuestions() {
     btn.style.display = 'none'
     var url = "https://opentdb.com/api.php?amount=1&difficulty=easy";
