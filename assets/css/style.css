@@ -341,7 +341,8 @@ body {
     overflow-x: hidden;
   }
   #frame #sidepanel #contacts::-webkit-scrollbar {
-    display: none;
+    /*display:none;*/
+    word-wrap: break-word;
   }
 }
 #frame #sidepanel #contacts.expanded {
