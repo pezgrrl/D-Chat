@@ -19,6 +19,15 @@ var database = firebase.database();
 var userList = [];
 var isDuplicate = false;
 
+function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+}
+
 function fireMessage(msg) {
     database.ref("message-history").push({
         name: sn,
@@ -28,26 +37,46 @@ function fireMessage(msg) {
 }
 
 function giphySearch(query) {
-    if (!query) {
-        query = "random";
-    }
-    var queryURL = "https://api.giphy.com/v1/gifs/search?q=" + query + "&api_key=tEEFTUSNf170mNTLFD9OkvQMltuPs8gS";
-    $.ajax({
-        url: queryURL,
-        method: "GET"
-    }).then(function (response) {
-        //console.log(response)
-        var imageURL = response.data[4].images.fixed_width.url;
-        database.ref("message-history").push({
-            name: sn,
-            message: msg,
-            timestamp: firebase.database.ServerValue.TIMESTAMP,
-            api_query: query,
-            api_result: imageURL,
-            api_type: "giphy",
+    var apiKey = "&api_key=tEEFTUSNf170mNTLFD9OkvQMltuPs8gS";
+    var queryURL = "https://api.giphy.com/v1/gifs/";
+    if (query) {
+        queryURL += "search?q=" + query + apiKey;
+        $.ajax({
+            url: queryURL,
+            method: "GET"
+        }).then(function (response) {
+            if(response.data.length) {
+                var imageURL = response.data[Math.floor(Math.random()*response.data.length)].images.fixed_width.url;
+                database.ref("message-history").push({
+                    name: sn,
+                    message: msg,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    api_query: query,
+                    api_result: imageURL,
+                    api_type: "giphy",
+                });
+            } else {
+                giphySearch();
+            }
         });
-    });
-};
+    } else {
+        queryURL += "random?" + apiKey;
+        $.ajax({
+            url: queryURL,
+            method: "GET"
+        }).then(function (response) {
+            var imageURL = response.data.images.fixed_width.url;
+            database.ref("message-history").push({
+                name: sn,
+                message: msg,
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                api_query: "",
+                api_result: imageURL,
+                api_type: "giphy",
+            });
+        });
+    }
+}
 
 function createTriviaURL(d, c, t, a) {
     var cat = "", diff = "", type = "&type=multiple", amt = 1;
@@ -230,8 +259,10 @@ $(document).ready(function () {
             triviaMsg.addClass("sent");
             var triviaTxt = $("<p>");
             var triviaCorrAns = messageObj.api_result[0].correct_answer;
+            console.log(triviaCorrAns);
             var triviaAllAns = messageObj.api_result[0].incorrect_answers;
             triviaAllAns.push(triviaCorrAns);
+            shuffleArray(triviaAllAns);
             triviaTxt.append(messageObj.api_result[0].question, "<br>");
             triviaAllAns.forEach((e, i) => { triviaTxt.append(e + "<br>") });
             triviaMsg.append(triviaTxt);
