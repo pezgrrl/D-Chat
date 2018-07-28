@@ -53,8 +53,8 @@ body {
 }
 @media screen and (max-width: 735px) {
   #frame #sidepanel {
-    width: 114px;
-    min-width: 99px;
+    width: 56px;
+    min-width: 9px;
   }
 }
 #frame #sidepanel #profile {
@@ -518,8 +518,9 @@ body {
 }
 @media screen and (max-width: 735px) {
   #frame .content {
-    width: calc(100% - 100px);
-    min-width: 265px !important;
+    width: calc(100% - 57px);
+    /* min-width: 265px !important; */
+    word-break: break-word;
   }
 }
 @media screen and (min-width: 900px) {
