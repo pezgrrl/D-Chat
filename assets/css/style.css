@@ -510,15 +510,15 @@ body {
   }
 }
 #frame .content {
-/*   float: right; */
+  float: right;
   width: 70%;
   height: 100%;
-/*   overflow: hidden; */
+  overflow: hidden;
   position: relative;
 }
 @media screen and (max-width: 735px) {
   #frame .content {
-    width: calc(100% - 58px);
+    width: calc(100% - 100px);
     min-width: 265px !important;
   }
 }
