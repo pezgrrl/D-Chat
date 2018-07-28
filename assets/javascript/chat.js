@@ -28,26 +28,46 @@ function fireMessage(msg) {
 }
 
 function giphySearch(query) {
-    if (!query) {
-        query = "random";
-    }
-    var queryURL = "https://api.giphy.com/v1/gifs/search?q=" + query + "&api_key=tEEFTUSNf170mNTLFD9OkvQMltuPs8gS";
-    $.ajax({
-        url: queryURL,
-        method: "GET"
-    }).then(function (response) {
-        //console.log(response)
-        var imageURL = response.data[4].images.fixed_width.url;
-        database.ref("message-history").push({
-            name: sn,
-            message: msg,
-            timestamp: firebase.database.ServerValue.TIMESTAMP,
-            api_query: query,
-            api_result: imageURL,
-            api_type: "giphy",
+    var apiKey = "&api_key=tEEFTUSNf170mNTLFD9OkvQMltuPs8gS";
+    var queryURL = "https://api.giphy.com/v1/gifs/";
+    if (query) {
+        queryURL += "search?q=" + query + apiKey;
+        $.ajax({
+            url: queryURL,
+            method: "GET"
+        }).then(function (response) {
+            if(response.data.length) {
+                var imageURL = response.data[Math.floor(Math.random()*response.data.length)].images.fixed_width.url;
+                database.ref("message-history").push({
+                    name: sn,
+                    message: msg,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    api_query: query,
+                    api_result: imageURL,
+                    api_type: "giphy",
+                });
+            } else {
+                giphySearch();
+            }
         });
-    });
-};
+    } else {
+        queryURL += "random?" + apiKey;
+        $.ajax({
+            url: queryURL,
+            method: "GET"
+        }).then(function (response) {
+            var imageURL = response.data.images.fixed_width.url;
+            database.ref("message-history").push({
+                name: sn,
+                message: msg,
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                api_query: "",
+                api_result: imageURL,
+                api_type: "giphy",
+            });
+        });
+    }
+}
 
 function createTriviaURL(d, c, t, a) {
     var cat = "", diff = "", type = "&type=multiple", amt = 1;
