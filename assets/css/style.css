@@ -396,7 +396,7 @@ body {
 #frame #sidepanel #contacts ul li.contact .wrap span {
   position: absolute;
   left: 0;
-  margin: 2px 0 0 -2px;
+  margin: 6px 0 0 -2px;
   width: 12px;
   height: 12px;
   border-radius: 50%;
@@ -413,7 +413,7 @@ body {
   background: #e74c3c;
 }
 #frame #sidepanel #contacts ul li.contact .wrap img {
-  width: 40px;
+  width: 4px;
   border-radius: 50%;
   float: left;
   margin-right: 10px;
