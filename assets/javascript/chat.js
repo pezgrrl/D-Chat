@@ -19,6 +19,15 @@ var database = firebase.database();
 var userList = [];
 var isDuplicate = false;
 
+function shuffleArray(array) {
+    for (var i = array.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+}
+
 function fireMessage(msg) {
     database.ref("message-history").push({
         name: sn,
@@ -250,8 +259,10 @@ $(document).ready(function () {
             triviaMsg.addClass("sent");
             var triviaTxt = $("<p>");
             var triviaCorrAns = messageObj.api_result[0].correct_answer;
+            console.log(triviaCorrAns);
             var triviaAllAns = messageObj.api_result[0].incorrect_answers;
             triviaAllAns.push(triviaCorrAns);
+            shuffleArray(triviaAllAns);
             triviaTxt.append(messageObj.api_result[0].question, "<br>");
             triviaAllAns.forEach((e, i) => { triviaTxt.append(e + "<br>") });
             triviaMsg.append(triviaTxt);
